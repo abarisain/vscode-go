@@ -57,26 +57,53 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				if (!includeDocs) {
 					return resolve(definitionInformation);
 				}
-				cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
-					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "godoc" command is not available.');
-					}
-					let godocLines = stdout.toString().split('\n');
-					let doc = '';
-					let sigName = signature.substring(0, signature.indexOf(' '));
-					let sigParams = signature.substring(signature.indexOf(' func') + 5);
-					let searchSignature = 'func ' + sigName + sigParams;
-					for (let i = 0; i < godocLines.length; i++) {
-						if (godocLines[i] === searchSignature) {
-							while (godocLines[++i].startsWith('    ')) {
-								doc += godocLines[i].substring(4) + '\n';
-							}
-							break;
+
+				let useGogetdoc = false;
+
+				if (useGogetdoc) {
+					let gogetdoc = getBinPath('gogetdoc');
+					let fullPos = document.fileName + ':#' + offset.toString();
+					let docP = cp.execFile(gogetdoc, ['-modified', '-pos', fullPos], {}, (err, stdout, stderr) => {
+						if (err && (<any>err).code === 'ENOENT') {
+							vscode.window.showInformationMessage('The "gogetdoc" command is not available.');
 						}
-					}
-					definitionInformation.doc = doc;
-					return resolve(definitionInformation);
-				});
+						let godocLines = stdout.toString().split('\n');
+						let doc = '';
+						for (let i = 4; i < godocLines.length; i++) {
+							doc += godocLines[i] + '\n'
+						}
+						definitionInformation.doc = doc;
+						return resolve(definitionInformation);
+					});
+
+					// gogetdoc excepts stdin formatted in an archive format
+					let documentText = document.getText();
+					let documentArchive = document.fileName + "\n";
+					documentArchive = documentArchive + documentText.length + "\n";
+					documentArchive = documentArchive + documentText;
+					docP.stdin.end(documentArchive);
+				} else {
+					cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
+						if (err && (<any>err).code === 'ENOENT') {
+							vscode.window.showInformationMessage('The "godoc" command is not available.');
+						}
+						let godocLines = stdout.toString().split('\n');
+						let doc = '';
+						let sigName = signature.substring(0, signature.indexOf(' '));
+						let sigParams = signature.substring(signature.indexOf(' func') + 5);
+						let searchSignature = 'func ' + sigName + sigParams;
+						for (let i = 0; i < godocLines.length; i++) {
+							if (godocLines[i] === searchSignature) {
+								while (godocLines[++i].startsWith('    ')) {
+									doc += godocLines[i].substring(4) + '\n';
+								}
+								break;
+							}
+						}
+						definitionInformation.doc = doc;
+						return resolve(definitionInformation);
+					});
+				}
 			} catch (e) {
 				reject(e);
 			}
