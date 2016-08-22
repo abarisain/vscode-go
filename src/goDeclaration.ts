@@ -79,6 +79,31 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					}
 					return resolve(definitionInformation);
 				});
+
+				/*
+				if (useGogetdoc) {
+					let gogetdoc = getBinPath('gogetdoc');
+					let fullPos = document.fileName + ':#' + offset.toString();
+					let docP = cp.execFile(gogetdoc, ['-modified', '-pos', fullPos], {}, (err, stdout, stderr) => {
+						if (err && (<any>err).code === 'ENOENT') {
+							vscode.window.showInformationMessage('The "gogetdoc" command is not available.');
+						}
+						let godocLines = stdout.toString().split('\n');
+						let doc = '';
+						for (let i = 4; i < godocLines.length; i++) {
+							doc += godocLines[i] + '\n'
+						}
+						definitionInformation.doc = doc;
+						return resolve(definitionInformation);
+					});
+
+					// gogetdoc excepts stdin formatted in an archive format
+					let documentText = document.getText();
+					let documentArchive = document.fileName + "\n";
+					documentArchive = documentArchive + documentText.length + "\n";
+					documentArchive = documentArchive + documentText;
+					docP.stdin.end(documentArchive);
+				} */
 			} catch (e) {
 				reject(e);
 			}
