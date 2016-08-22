@@ -57,34 +57,13 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				if (!includeDocs) {
 					return resolve(definitionInformation);
 				}
-				cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
-					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "godoc" command is not available.');
-					}
-					let godocLines = stdout.toString().split('\n');
-					let doc = '';
-					let sigName = signature.substring(0, signature.indexOf(' '));
-					let sigParams = signature.substring(signature.indexOf(' func') + 5);
-					let searchSignature = 'func ' + sigName + sigParams;
-					for (let i = 0; i < godocLines.length; i++) {
-						if (godocLines[i] === searchSignature) {
-							while (godocLines[++i].startsWith('    ')) {
-								doc += godocLines[i].substring(4) + '\n';
-							}
-							break;
-						}
-					}
-					if (doc !== '') {
-						definitionInformation.doc = doc;
-					}
-					return resolve(definitionInformation);
-				});
 
-				/*
+				var useGogetdoc = true;
+
 				if (useGogetdoc) {
 					let gogetdoc = getBinPath('gogetdoc');
 					let fullPos = document.fileName + ':#' + offset.toString();
-					let docP = cp.execFile(gogetdoc, ['-modified', '-pos', fullPos], {}, (err, stdout, stderr) => {
+					let docP = cp.execFile(gogetdoc, ['-json', '-modified', '-pos', fullPos], {}, (err, stdout, stderr) => {
 						if (err && (<any>err).code === 'ENOENT') {
 							vscode.window.showInformationMessage('The "gogetdoc" command is not available.');
 						}
@@ -103,7 +82,30 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					documentArchive = documentArchive + documentText.length + "\n";
 					documentArchive = documentArchive + documentText;
 					docP.stdin.end(documentArchive);
-				} */
+				} else {
+					cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
+						if (err && (<any>err).code === 'ENOENT') {
+							vscode.window.showInformationMessage('The "godoc" command is not available.');
+						}
+						let godocLines = stdout.toString().split('\n');
+						let doc = '';
+						let sigName = signature.substring(0, signature.indexOf(' '));
+						let sigParams = signature.substring(signature.indexOf(' func') + 5);
+						let searchSignature = 'func ' + sigName + sigParams;
+						for (let i = 0; i < godocLines.length; i++) {
+							if (godocLines[i] === searchSignature) {
+								while (godocLines[++i].startsWith('    ')) {
+									doc += godocLines[i].substring(4) + '\n';
+								}
+								break;
+							}
+						}
+						if (doc !== '') {
+							definitionInformation.doc = doc;
+						}
+						return resolve(definitionInformation);
+					});
+				}
 			} catch (e) {
 				reject(e);
 			}
