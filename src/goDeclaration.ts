@@ -20,6 +20,14 @@ export interface GoDefinitionInformtation {
 	doc: string;
 }
 
+interface GogetdocMethodInformation {
+	name: string;
+	import: string;
+	decl: string;
+	doc: string;
+	pos: string;
+}
+
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
 	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
 
@@ -28,89 +36,49 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 
 		let godef = getBinPath('godef');
 
-		// Spawn `godef` process
-		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {}, (err, stdout, stderr) => {
+		let gogetdoc = getBinPath('gogetdoc');
+		let fullPos = document.fileName + ':#' + offset.toString();
+		let docP = cp.execFile(gogetdoc, ['-json', '-modified', '-pos', fullPos], {}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('godef');
 				}
 				if (err) return resolve(null);
-				let result = stdout.toString();
-				let lines = result.split('\n');
-				let match = /(.*):(\d+):(\d+)/.exec(lines[0]);
+
+				let result = <GogetdocMethodInformation>JSON.parse(stdout.toString());
+
+				let match = /(.*):(\d+):(\d+)/.exec(result.pos);
 				if (!match) {
 					// TODO: Gotodef on pkg name:
 					// /usr/local/go/src/html/template\n
 					return resolve(null);
 				}
 				let [_, file, line, col] = match;
-				let signature = lines[1];
-				let godoc = getBinPath('godoc');
-				let pkgPath = path.dirname(file);
+
 				let definitionInformation: GoDefinitionInformtation = {
 					file: file,
 					line: +line - 1,
 					col: + col - 1,
-					lines,
+					lines: [],
 					doc: undefined
 				};
-				if (!includeDocs) {
-					return resolve(definitionInformation);
+
+				if (includeDocs) {
+					definitionInformation.doc = result.doc;
 				}
 
-				var useGogetdoc = true;
-
-				if (useGogetdoc) {
-					let gogetdoc = getBinPath('gogetdoc');
-					let fullPos = document.fileName + ':#' + offset.toString();
-					let docP = cp.execFile(gogetdoc, ['-json', '-modified', '-pos', fullPos], {}, (err, stdout, stderr) => {
-						if (err && (<any>err).code === 'ENOENT') {
-							vscode.window.showInformationMessage('The "gogetdoc" command is not available.');
-						}
-						let godocLines = stdout.toString().split('\n');
-						let doc = '';
-						for (let i = 4; i < godocLines.length; i++) {
-							doc += godocLines[i] + '\n'
-						}
-						definitionInformation.doc = doc;
-						return resolve(definitionInformation);
-					});
-
-					// gogetdoc excepts stdin formatted in an archive format
-					let documentText = document.getText();
-					let documentArchive = document.fileName + "\n";
-					documentArchive = documentArchive + documentText.length + "\n";
-					documentArchive = documentArchive + documentText;
-					docP.stdin.end(documentArchive);
-				} else {
-					cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
-						if (err && (<any>err).code === 'ENOENT') {
-							vscode.window.showInformationMessage('The "godoc" command is not available.');
-						}
-						let godocLines = stdout.toString().split('\n');
-						let doc = '';
-						let sigName = signature.substring(0, signature.indexOf(' '));
-						let sigParams = signature.substring(signature.indexOf(' func') + 5);
-						let searchSignature = 'func ' + sigName + sigParams;
-						for (let i = 0; i < godocLines.length; i++) {
-							if (godocLines[i] === searchSignature) {
-								while (godocLines[++i].startsWith('    ')) {
-									doc += godocLines[i].substring(4) + '\n';
-								}
-								break;
-							}
-						}
-						if (doc !== '') {
-							definitionInformation.doc = doc;
-						}
-						return resolve(definitionInformation);
-					});
-				}
+				return resolve(definitionInformation);
 			} catch (e) {
 				reject(e);
 			}
 		});
-		p.stdin.end(document.getText());
+
+		// gogetdoc excepts stdin formatted in an archive format
+		let documentText = document.getText();
+		let documentArchive = document.fileName + "\n";
+		documentArchive = documentArchive + documentText.length + "\n";
+		documentArchive = documentArchive + documentText;
+		docP.stdin.end(documentArchive);
 	});
 }
 
