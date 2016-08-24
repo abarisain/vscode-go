@@ -12,7 +12,7 @@ import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
-export interface GoDefinitionInformtation {
+export interface GoDefinitionInformation {
 	file: string;
 	line: number;
 	col: number;
@@ -28,8 +28,8 @@ interface GogetdocMethodInformation {
 	pos: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
-	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformation> {
+	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		let wordAtPosition = document.getWordRangeAtPosition(position);
 		let offset = byteOffsetAt(document, position);
@@ -55,7 +55,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				}
 				let [_, file, line, col] = match;
 
-				let definitionInformation: GoDefinitionInformtation = {
+				let definitionInformation: GoDefinitionInformation = {
 					file: file,
 					line: +line - 1,
 					col: + col - 1,

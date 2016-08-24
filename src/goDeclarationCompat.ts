@@ -11,10 +11,10 @@ import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { GoDefinitionInformtation } from './goDeclaration';
+import { GoDefinitionInformation } from './goDeclaration';
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
-	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformation> {
+	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		let wordAtPosition = document.getWordRangeAtPosition(position);
 		let offset = byteOffsetAt(document, position);
@@ -40,7 +40,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				let signature = lines[1];
 				let godoc = getBinPath('godoc');
 				let pkgPath = path.dirname(file);
-				let definitionInformation: GoDefinitionInformtation = {
+				let definitionInformation: GoDefinitionInformation = {
 					file: file,
 					line: +line - 1,
 					col: + col - 1,
