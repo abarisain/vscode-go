@@ -30,12 +30,9 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				return null;
 			}
 			let result = new SignatureHelp();
-			let text = res.lines[1];
-			let nameEnd = text.indexOf(' ');
-			let sigStart = nameEnd + 5; // ' func'
-			let funcName = text.substring(0, nameEnd);
-			let sig = text.substring(sigStart);
-			let si = new SignatureInformation(funcName + sig, res.doc);
+			let decl = res.info.decl.substring(5); // 'func '
+			let sig = decl.substring(res.info.name.length); // Remove the func name
+			let si = new SignatureInformation(decl, res.info.doc); // 'func '
 			si.parameters = parameters(sig).map(paramText =>
 				new ParameterInformation(paramText)
 			);
@@ -46,7 +43,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		});
 	}
 
-	private previousTokenPosition(document: TextDocument, position: Position): Position {
+	protected previousTokenPosition(document: TextDocument, position: Position): Position {
 		while (position.character > 0) {
 			let word = document.getWordRangeAtPosition(position);
 			if (word) {
@@ -57,7 +54,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		return null;
 	}
 
-	private walkBackwardsToBeginningOfCall(document: TextDocument, position: Position): { openParen: Position, commas: Position[] } {
+	protected walkBackwardsToBeginningOfCall(document: TextDocument, position: Position): { openParen: Position, commas: Position[] } {
 		let currentLine = document.lineAt(position.line).text.substring(0, position.character);
 		let parenBalance = 0;
 		let commas = [];
