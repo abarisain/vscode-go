@@ -33,14 +33,12 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		let wordAtPosition = document.getWordRangeAtPosition(position);
 		let offset = byteOffsetAt(document, position);
 
-		let godef = getBinPath('godef');
-
 		let gogetdoc = getBinPath('gogetdoc');
 		let fullPos = document.fileName + ':#' + offset.toString();
 		let docP = cp.execFile(gogetdoc, ['-json', '-modified', '-pos', fullPos], {}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('godef');
+					promptForMissingTool('gogetdoc');
 				}
 				if (err) return resolve(null);
 
