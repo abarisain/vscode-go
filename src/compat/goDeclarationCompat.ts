@@ -8,9 +8,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath } from './goPath';
-import { byteOffsetAt } from './util';
-import { promptForMissingTool } from './goInstallTools';
+import { getBinPath } from '../goPath';
+import { byteOffsetAt } from '../util';
+import { promptForMissingTool } from '../goInstallTools';
 
 export interface GoDefinitionInformationCompat {
 	file: string;

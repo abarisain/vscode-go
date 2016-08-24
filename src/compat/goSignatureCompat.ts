@@ -7,11 +7,11 @@
 
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath } from './goPath';
+import { getBinPath } from '../goPath';
 import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken } from 'vscode';
-import { definitionLocation } from './goDeclaration';
-import { parameters } from './util';
-import { GoSignatureHelpProvider } from './goSignature';
+import { definitionLocation } from '../goDeclaration';
+import { parameters } from '../util';
+import { GoSignatureHelpProvider } from '../goSignature';
 
 export class GoSignatureHelpProviderCompat extends GoSignatureHelpProvider {
 
