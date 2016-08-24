@@ -48,7 +48,12 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				if (!match) {
 					// TODO: Gotodef on pkg name:
 					// /usr/local/go/src/html/template\n
-					return resolve(null);
+					return resolve({
+						file: null,
+						line: null,
+						col: null,
+						info: result
+					});
 				}
 				let [_, file, line, col] = match;
 
