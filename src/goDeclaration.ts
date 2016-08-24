@@ -16,8 +16,7 @@ export interface GoDefinitionInformation {
 	file: string;
 	line: number;
 	col: number;
-	lines: string[];
-	doc: string;
+	info: GogetdocMethodInformation;
 }
 
 interface GogetdocMethodInformation {
@@ -28,7 +27,7 @@ interface GogetdocMethodInformation {
 	pos: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformation> {
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position): Promise<GoDefinitionInformation> {
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		let wordAtPosition = document.getWordRangeAtPosition(position);
@@ -59,13 +58,8 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					file: file,
 					line: +line - 1,
 					col: + col - 1,
-					lines: [],
-					doc: undefined
+					info: result
 				};
-
-				if (includeDocs) {
-					definitionInformation.doc = result.doc;
-				}
 
 				return resolve(definitionInformation);
 			} catch (e) {
@@ -85,7 +79,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		return definitionLocation(document, position, false).then(definitionInfo => {
+		return definitionLocation(document, position).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let definitionResource = vscode.Uri.file(definitionInfo.file);
 			let pos = new vscode.Position(definitionInfo.line, definitionInfo.col);

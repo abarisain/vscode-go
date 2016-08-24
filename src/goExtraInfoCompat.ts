@@ -6,7 +6,7 @@
 'use strict';
 
 import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken } from 'vscode';
-import { definitionLocation } from './goDeclaration';
+import { definitionLocation } from './goDeclarationCompat';
 
 export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
