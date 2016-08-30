@@ -36,6 +36,7 @@
     "console-stamp": "^0.2.2",
     "diff-match-patch": "^1.0.0",
     "json-rpc2": "^1.0.2",
+    "semver": "^5.3.0",
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0"
   },
