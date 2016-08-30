@@ -8,7 +8,8 @@
 import cp = require('child_process');
 import semver = require('semver');
 
-const goVersionRegexp = /^go version go([\.\d]*) .*$/m;
+// Volountarily ignore "rcX". We don't need that kind of granularity for now
+const goVersionRegexp = /^go version go([\.\d]*)(?:rc\d*)? .*$/m;
 let versionCache: string = null;
 
 export function getGoVersion(skipCache: boolean = true): Promise<string> {
@@ -35,10 +36,14 @@ export function getGoVersion(skipCache: boolean = true): Promise<string> {
 	});
 }
 
-export function isGoVersionAtLeast(version: string, skipCache: boolean = true): Promise<boolean> {
+export function isGoVersionAtLeast(wantedVersion: string, skipCache: boolean = true): Promise<boolean> {
 	return new Promise((resolve, reject) => {
 		getGoVersion(skipCache).then((res) => {
-			resolve(semver.gte(version, res, true));
+			// Add a patch version if needed to make semver happy
+			if (!/^\d\.\d\.\d$/.test(res)) {
+				res += '.0';
+			}
+			resolve(semver.gte(res, wantedVersion, true));
 		}, (reason) => {
 			reject(reason);
 		});
