@@ -10,15 +10,18 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { GoCompletionItemProvider } from './goSuggest';
-import { GoHoverProvider } from './goExtraInfo';
-import { GoDefinitionProvider } from './goDeclaration';
 import { GoReferenceProvider } from './goReferences';
 import { GoDocumentFormattingEditProvider, Formatter } from './goFormat';
 import { GoRenameProvider } from './goRename';
 import { GoDocumentSymbolProvider } from './goOutline';
-import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction';
+import { GoHoverProvider } from './goExtraInfo';
+import { GoDefinitionProvider } from './goDeclaration';
+import { GoSignatureHelpProvider } from './goSignature';
+import { GoHoverProviderCompat } from './compat/goExtraInfoCompat';
+import { GoDefinitionProviderCompat } from './compat/goDeclarationCompat';
+import { GoSignatureHelpProviderCompat } from './compat/goSignatureCompat';
 import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
@@ -27,21 +30,26 @@ import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './g
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest';
 import { addImport } from './goImport';
 import { installAllTools } from './goInstallTools';
+import { isGoVersionAtLeast } from './goVersion';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 
-	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
-	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
-	ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
+
+	// Disable gogetdoc and fallback on godef/godoc if go is too old, since it requires 1.6
+	isGoVersionAtLeast('1.6.0').then((res) => {
+		setupGogetdocDependentProviders(ctx, res);
+	}, (err) => {
+		setupGogetdocDependentProviders(ctx, false);
+	});
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
@@ -214,4 +222,17 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 		});
 	}, null, subscriptions);
 
+}
+
+function setupGogetdocDependentProviders(ctx: vscode.ExtensionContext, useGogetdoc: boolean) {
+	// TODO: A limitation of this method is that vscode must be restarted when go is updated
+	if (useGogetdoc) {
+		ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
+		ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
+		ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
+	} else {
+		ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProviderCompat()));
+		ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProviderCompat()));
+		ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProviderCompat(), '(', ','));
+	}
 }

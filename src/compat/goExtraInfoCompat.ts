@@ -8,7 +8,7 @@
 import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken } from 'vscode';
 import { definitionLocation } from './goDeclarationCompat';
 
-export class GoHoverProvider implements HoverProvider {
+export class GoHoverProviderCompat implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 		return definitionLocation(document, position, true).then(definitionInfo => {
 			if (definitionInfo == null) return null;
