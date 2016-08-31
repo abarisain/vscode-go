@@ -31,7 +31,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			}
 			let result = new SignatureHelp();
 			let decl = res.info.decl.substring(5); // 'func '
-			let cutIndex = decl.indexOf(res.info.name+'('); // Find 'functionname(' to remove anything before it
+			let cutIndex = decl.indexOf(res.info.name + '('); // Find 'functionname(' to remove anything before it
 			if (cutIndex !== -1) {
 				cutIndex += res.info.name.length; // no need to +1 for the (
 			} else {

@@ -72,8 +72,8 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 
 		// gogetdoc excepts stdin formatted in an archive format
 		let documentText = document.getText();
-		let documentArchive = document.fileName + "\n";
-		documentArchive = documentArchive + Buffer.byteLength(documentText) + "\n";
+		let documentArchive = document.fileName + '\n';
+		documentArchive = documentArchive + Buffer.byteLength(documentText) + '\n';
 		documentArchive = documentArchive + documentText;
 		docP.stdin.end(documentArchive);
 	});
